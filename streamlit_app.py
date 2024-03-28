@@ -7,9 +7,12 @@ from sklearn.metrics import mean_squared_error, r2_score
 import altair as alt
 import time
 import zipfile
+import pandas as pd
+from datetime import datetime
+import re
 
 # Page title
-st.set_page_config(page_title='ML Model Building', page_icon='🤖')
+st.set_page_config(page_title='Search Old Logs', page_icon='🤖')
 st.title('🤖 ML Model Building')
 
 with st.expander('About this app'):
@@ -34,51 +37,106 @@ with st.expander('About this app'):
 
 # Sidebar for accepting input parameters
 with st.sidebar:
-    # Load data
-    st.header('1.1. Input data')
 
-    st.markdown('**1. Use custom data**')
-    uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
-    if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file, index_col=False)
+    def is_valid_url(url):
+        url_regex = re.compile(r'https?://(?:www\.)?[a-zA-Z0-9./]+')
+        return bool(url_regex.match(url))
+
+    st.header('Upload and Submit your Questions!')
+    st.markdown('**1a. Input the URL of Log Files**')
+    number_inputs = st.number_input('number of URLs', step=1, min_value=1)
+    st.write('number of URLs to upload ', number_inputs)
+
+    data = pd.DataFrame(columns=['nr'])
+
+    if 'df' not in st.session_state:
+        st.session_state.df = data
+
+    input_values = [st.text_input(f'URL No. {i+1}', '', key=f"text_input_{i}")
+          for i in range(number_inputs)]
+    # uploaded_files = st.file_uploader("Choose a TXT file", accept_multiple_files=True,
+    #                                     type=['txt'])
+    # for uploaded_file in uploaded_files:
+    #     bytes_data = uploaded_file.read()
+    #     st.write("filename:", uploaded_file.name)
+    #     st.write(bytes_data)
+    
+    st.markdown('**1b. Input Your Question**')
+    input_question = st.text_input("Ask your question", key="input_question")
+
+    st.markdown('**1c. Select Date of Logs to Read From**')
+    start_time = st.slider(
+        "When do you start?",
+        min_value=datetime(2019, 1, 1),
+        value=datetime(2020, 1, 1),
+        format="DD/MM/YYYY")
+
+    if st.button("Submit", type="primary"):
+        can_continue = True
+        if input_question == None:
+            st.write("Please enter your question!!!")
+            can_continue = False
+        elif len(input_question) < 10:
+            st.write("Question is too short!!!")
+            can_continue = False
+        else:
+            #check if all URLs are okay
+            for i, url in enumerate(input_values):
+                if not is_valid_url(url):
+                    st.write(f"URL No. {i+1} is invalid!!!\r...")
+                    can_continue = False
+
+        # update dataframe state
+        if can_continue:
+            to_upload = {
+                "question": input_question,
+                "documents": input_values,
+                "autoApprove": True
+            }
+            st.text(to_upload)
+
+    
+
+        
       
-    # Download example data
-    @st.cache_data
-    def convert_df(input_df):
-        return input_df.to_csv(index=False).encode('utf-8')
-    example_csv = pd.read_csv('https://raw.githubusercontent.com/dataprofessor/data/master/delaney_solubility_with_descriptors.csv')
-    csv = convert_df(example_csv)
-    st.download_button(
-        label="Download example CSV",
-        data=csv,
-        file_name='delaney_solubility_with_descriptors.csv',
-        mime='text/csv',
-    )
+    # # Download example data
+    # @st.cache_data
+    # def convert_df(input_df):
+    #     return input_df.to_csv(index=False).encode('utf-8')
+    # example_csv = pd.read_csv('https://raw.githubusercontent.com/dataprofessor/data/master/delaney_solubility_with_descriptors.csv')
+    # csv = convert_df(example_csv)
+    # st.download_button(
+    #     label="Download example CSV",
+    #     data=csv,
+    #     file_name='delaney_solubility_with_descriptors.csv',
+    #     mime='text/csv',
+    # )
 
-    # Select example data
-    st.markdown('**1.2. Use example data**')
-    example_data = st.toggle('Load example data')
-    if example_data:
-        df = pd.read_csv('https://raw.githubusercontent.com/dataprofessor/data/master/delaney_solubility_with_descriptors.csv')
+    # # Select example data
+    # st.markdown('**1.2. Use example data**')
+    # example_data = st.toggle('Load example data')
+    # if example_data:
+    #     df = pd.read_csv('https://raw.githubusercontent.com/dataprofessor/data/master/delaney_solubility_with_descriptors.csv')
 
-    st.header('2. Set Parameters')
-    parameter_split_size = st.slider('Data split ratio (% for Training Set)', 10, 90, 80, 5)
+    # st.header('2. Set Parameters')
+    # parameter_split_size = st.slider('Data split ratio (% for Training Set)', 10, 90, 80, 5)
 
-    st.subheader('2.1. Learning Parameters')
-    with st.expander('See parameters'):
-        parameter_n_estimators = st.slider('Number of estimators (n_estimators)', 0, 1000, 100, 100)
-        parameter_max_features = st.select_slider('Max features (max_features)', options=['all', 'sqrt', 'log2'])
-        parameter_min_samples_split = st.slider('Minimum number of samples required to split an internal node (min_samples_split)', 2, 10, 2, 1)
-        parameter_min_samples_leaf = st.slider('Minimum number of samples required to be at a leaf node (min_samples_leaf)', 1, 10, 2, 1)
 
-    st.subheader('2.2. General Parameters')
-    with st.expander('See parameters', expanded=False):
-        parameter_random_state = st.slider('Seed number (random_state)', 0, 1000, 42, 1)
-        parameter_criterion = st.select_slider('Performance measure (criterion)', options=['squared_error', 'absolute_error', 'friedman_mse'])
-        parameter_bootstrap = st.select_slider('Bootstrap samples when building trees (bootstrap)', options=[True, False])
-        parameter_oob_score = st.select_slider('Whether to use out-of-bag samples to estimate the R^2 on unseen data (oob_score)', options=[False, True])
+    # st.subheader('2.1. Learning Parameters')
+    # with st.expander('See parameters'):
+    #     parameter_n_estimators = st.slider('Number of estimators (n_estimators)', 0, 1000, 100, 100)
+    #     parameter_max_features = st.select_slider('Max features (max_features)', options=['all', 'sqrt', 'log2'])
+    #     parameter_min_samples_split = st.slider('Minimum number of samples required to split an internal node (min_samples_split)', 2, 10, 2, 1)
+    #     parameter_min_samples_leaf = st.slider('Minimum number of samples required to be at a leaf node (min_samples_leaf)', 1, 10, 2, 1)
 
-    sleep_time = st.slider('Sleep time', 0, 3, 0)
+    # st.subheader('2.2. General Parameters')
+    # with st.expander('See parameters', expanded=False):
+    #     parameter_random_state = st.slider('Seed number (random_state)', 0, 1000, 42, 1)
+    #     parameter_criterion = st.select_slider('Performance measure (criterion)', options=['squared_error', 'absolute_error', 'friedman_mse'])
+    #     parameter_bootstrap = st.select_slider('Bootstrap samples when building trees (bootstrap)', options=[True, False])
+    #     parameter_oob_score = st.select_slider('Whether to use out-of-bag samples to estimate the R^2 on unseen data (oob_score)', options=[False, True])
+
+    # sleep_time = st.slider('Sleep time', 0, 3, 0)
 
 # Initiate the model building process
 if uploaded_file or example_data: 
