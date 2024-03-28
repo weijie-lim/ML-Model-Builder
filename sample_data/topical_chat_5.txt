@@ -1,0 +1,22 @@
+agent_1 : hi, do you use google much? 
+agent_2 : Yes, I think it is the most effective search engine. How about you? Do you use gmail? 
+agent_1 : Yes. a google search takes more computing power than sending astronauts tot he moon 
+agent_2 : And before on Google moon they used to use cheese for close ups! 
+agent_1 : do you know how google maps calculates traffic? 
+agent_2 : I am not sure, how do they do this? 
+agent_1 : they track how fast android devices are moving 
+agent_2 : Interesting! Google really is taking over the world. Their data center electricity use is 0.01 percent of all worldwide electricity. 
+agent_1 : Yes for sure they are. they have grown so much over the years 
+agent_2 : But I like that they like to have fun too. Have you ever typed askew into Google? 
+agent_1 : No I have. What does the results turn? 
+agent_2 : You should try it! It tilts the page. Another fun thing Google does is call new employees nogglers. They have to wear propeller beanies. Or is this mean? 
+agent_1 : Oh, not sure about that really. People say it is a great place to work at though 
+agent_2 : Before Google launched gmail, that was the name of a free email service offered by garfield's website. That actually seems more fun. 
+agent_1 : I know now everytime I open gmail I think of garfield 
+agent_2 : Speaking of cats, I would love to get a glow in the dark one. They have those in South Korea. 
+agent_1 : Wow. In Japana and Taiwan there are cat cafes where you can play with them 
+agent_2 : That seems fun! That reminds me of the Anderson house bed and breakfast in Minnesota. They used to offer a free cat for the night when you booked a room. 
+agent_1 : wow. there is a town in alaska where the mayor of the town is a cat 
+agent_2 : That is cool. Cats are a pretty smart species. There has not been a cat species extinction in 10,000 years. 
+agent_1 : They are indeed very smart and that proves it. Nice chatting with you. 
+

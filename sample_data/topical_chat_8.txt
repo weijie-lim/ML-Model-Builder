@@ -1,0 +1,22 @@
+agent_1 : Are you a Star Wars fan? I need to rewatch the OT and the prequels so I can watch the subsequent stuff for the first time and understand what's going on. 
+agent_2 : Hi! Yes, I am a huge fan of Star Wars! I also loved how it was the first major movie to be dubbed in Navajo! I think that is so cool! 
+agent_1 : Yeah, that's wild. I guess it takes a pretty small audience to pay for the translation work. 
+agent_2 : Agreed. Isn't it also funny James Earl Jones only spent two and half hours recording his lines for Darth Vader? I also can't believe he was only paid $7500! Geez, that's pocket change. 
+agent_1 : $7500 is amazingly low. I guess since Darth Vader was masked Jones could just record everything at once in the studio. 
+agent_2 : Agreed. Can you also believe that George Lucas' wife at the time, Marcia, won an academy award for her editing on Star Wars and yet George Lucas didn't win an academy award for directing. That is just downright unbelievable! 
+agent_1 : A lot of people think the OT was so much better than the prequels because of her influence. 
+agent_2 : Yeah it was because of her that so many major changes were made like Leia's good luck kiss, Obi Wan's death, etc. She was truly a big influence! 
+agent_1 : I remember thinking just about everything in the prequels' timeline was off, based on the mental version of the past the OT led us to construct. But I'd have to rewatch to nail it down. 
+agent_2 : Yeah I would have to watch it as well! So are you also a fan of Chewbacca? I love him. I think it's funny there's a bat species called the Chewbacca bat. That's hilarious! 
+agent_1 : I never felt strongly about Chewbacca one way or the other TBH. But I've got to google a picture of that bat to see what it looks like! 
+agent_2 : I would like to see it as well. Did you know Chewbacca actually had a wife and two boys? That's pretty interesting! 
+agent_1 : I vaguely recall reading something in the Star Wars fictional universe where a young Han Solo stayed with Chewbacca and his mom in their home. 
+agent_2 : That's so weird, isn't it? Ha! Are you one of the fans who believes both r2d2 and Chewbacca were secret rebel agents? I kind of think it's an interesting theory.  
+agent_1 : I wish I knew enough about the background to have an opinion, but the last Star Wars I watched was Episode III, when it came out on video. I really need to rewatch to refresh my memory of it.  
+agent_2 : Same here! Like, I also had forgotten that before his companionship with Chewbacca, Hans Solo was an imperial lieutenant! 
+agent_1 : Yeah, I don't remember that at all. He definitely doesn't seem like the type. 
+agent_2 : Indeed he doesn't. But I've always liked Chewbacca because he reminded me of a giant dog. Ha! Speaking of dogs, I think it's cool that dogs, along with elephants, are the only animals that understand pointing! 
+agent_1 : I wouldn't be surprised if cats understood it but just didn't care, LOL. 
+agent_2 : Ha! No kidding. Speaking of dogs and cats, I like how Google prefers dogs over cats and even states in their code of conduct that they're a dog company! That is awesome! 
+agent_1 : Yeah, that's a weird official policy for what's supposed to be a neutral search engine! Nice chatting with you. 
+
