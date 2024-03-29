@@ -99,6 +99,7 @@ with st.sidebar:
         # value=datetime(2020, 1, 1),
         format="YYYY/MM/DD")
 
+    final_doc_list_by_date = []
     if st.button("Submit", type="primary"):
         can_continue = True
         if input_question == None:
@@ -114,19 +115,23 @@ with st.sidebar:
                     st.write(f"URL No. {i+1} is invalid!!!\r...")
                     can_continue = False
                 else:
-                    date_str =link.split('/')[-1].split('_')[-2]
+                    date_str =url.split('/')[-1].split('_')[-2]
                     if not is_valid_datestring(date_str):
                         can_continue = False
                         st.write(f"Check date format in Url, follow YYYYMMDD")
+                    else:
+                        #check for datetime
+                        date_obj = datetime.datetime.strptime(date_str, date_format)
+                        if date_obj.date() <= end_time.date():
+                            final_doc_list_by_date.append(url)
 
 
         # update dataframe state
         if can_continue:
-            #check for datetime
-            
+
             to_upload = {
                 "question": input_question,
-                "documents": input_values,
+                "documents": final_doc_list_by_date,
                 "autoApprove": True
             }
 
