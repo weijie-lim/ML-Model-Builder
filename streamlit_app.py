@@ -65,11 +65,11 @@ with st.sidebar:
     input_question = st.text_input("Ask your question", key="input_question")
 
     st.markdown('**1c. Select Date of Logs to Read From**')
-    start_time = st.slider(
+    end_time = st.slider(
         "When do you start?",
         min_value=datetime(2019, 1, 1),
-        value=datetime(2020, 1, 1),
-        format="DD/MM/YYYY")
+        # value=datetime(2020, 1, 1),
+        format="YYYY/MM/DD")
 
     if st.button("Submit", type="primary"):
         can_continue = True
@@ -88,12 +88,19 @@ with st.sidebar:
 
         # update dataframe state
         if can_continue:
+            #check for datetime
+            
+
+
             to_upload = {
                 "question": input_question,
                 "documents": input_values,
                 "autoApprove": True
             }
+
             st.text(to_upload)
+
+
 
     
 
