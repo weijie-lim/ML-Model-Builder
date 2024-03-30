@@ -1,15 +1,20 @@
-import streamlit as st
+import altair as alt
+import datetime
 import pandas as pd
 import numpy as np
+import streamlit as st
+import time
+import re
+import requests
+import zipfile
+
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
-import altair as alt
-import time
-import zipfile
-import pandas as pd
-import datetime
-import re
+
+
+POST_URL_SUBMIT_DOC_QNS = "https://clericailimweijie-ppt5727pmq-uw.a.run.app/get_question_and_facts"
+
 
 # Page title
 st.set_page_config(page_title='Search Old Logs', page_icon='🤖')
@@ -136,13 +141,10 @@ with st.sidebar:
             }
 
             st.text(to_upload)
+            x = requests.post(POST_URL_SUBMIT_DOC_QNS, json = to_upload)
+            if x.status_code != 200:
+                st.write("status code:",x.status_code)
 
-
-
-
-    
-
-        
       
     # # Download example data
     # @st.cache_data
