@@ -19,7 +19,6 @@ UPSTASH_REDIS_TOKEN=Constants.UPSTASH_REDIS_TOKEN
 UPSTASH_REDIS_PASSWORD=Constants.UPSTASH_REDIS_PASSWORD
 REDIS_KEY=Constants.REDIS_KEY
 
-
 # PAGE TITLE
 st.set_page_config(page_title='Search Old Logs', page_icon='🤖')
 st.title('🤖 Your Trusty AMA Bot 🤖')
@@ -73,7 +72,7 @@ with st.sidebar:
             if not is_valid_datestring(date_str):
                 st.write(f"Check date format in Url, follow YYYYMMDD format")
     
-    st.caption('*For URL(s), please submit with .txt format at the end. No parsing of HTML will work in this app example.')
+    st.caption('*For URL(s), please submit in a raw .txt format at the end. No parsing of HTML will work in this app example.')
     st.caption('**HTML document query or parsing can be done in the future for further app improvement')
     
     st.markdown('**2. Input Your Question**') 
