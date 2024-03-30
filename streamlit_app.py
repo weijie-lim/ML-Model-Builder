@@ -222,6 +222,13 @@ if st.session_state.has_facts_to_show == True:
         ans2 = answers[1]
         ans3 = answers[2]
 
+        if ans1.strip() == "":
+            ans1="<empty>"
+        if ans2.strip() == "":
+            ans2="<empty>"
+        if ans3.strip() == "":
+            ans4="<empty>"
+
         if ans1 == ans2:
             ans2 = "Duplicate: "+ ans2
         if ans1 == ans3:
