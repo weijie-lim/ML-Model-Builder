@@ -179,6 +179,7 @@ with st.sidebar:
                 st.session_state.answers_to_question = json.loads(y.text)
                 st.session_state.submit_query_is_disabled = True
                 st.experimental_rerun()
+    st.caption("If status code is 405, please re-submit a couple more times as the system is warming up.")
 
 # QUESTION CONTAINER
 container = st.container(border=True)
