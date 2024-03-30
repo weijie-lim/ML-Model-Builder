@@ -43,6 +43,9 @@ if "date_keys" not in st.session_state:
 if "submit_facts_is_disabled" not in st.session_state:
     st.session_state.submit_facts_is_disabled = False
 
+if "submit_query_is_disabled" not in st.session_state:
+    st.session_state.submit_query_is_disabled = False
+
 # SIDEBAR FOR ACCEPTING INPUTS
 with st.sidebar:
 
@@ -57,12 +60,11 @@ with st.sidebar:
             return False
         return True
 
-    st.header('Upload and Submit your Questions!')
-    st.markdown('**1a. Input the URL of Log Files**')
-    number_inputs = st.number_input('number of URLs', step=1, min_value=1)
-    st.write('number of URLs to upload ', number_inputs)
+    st.header('✍ Upload Document URL(s) and Submit your Question! ✍')
+    st.markdown('**1. Input Your URL(s) to Doc(s)**')
+    number_inputs = st.number_input('Number of URL(s):', step=1, min_value=1, disabled=st.session_state.submit_query_is_disabled)
 
-    input_values = [st.text_input(f'URL No. {i+1}', '', key=f"text_input_{i}")
+    input_values = [st.text_input(f'Insert URL {i+1}:', '', key=f"text_input_{i}", disabled=st.session_state.submit_query_is_disabled)
     for i in range(number_inputs)]
     
     for link in input_values:
@@ -71,10 +73,10 @@ with st.sidebar:
             if not is_valid_datestring(date_str):
                 st.write(f"Check date format in Url, follow YYYYMMDD format")
     
-    st.markdown('**1b. Input Your Question**')  
-    input_question = st.text_input("Ask your question")
+    st.markdown('**2. Input Your Question**') 
+    input_question = st.text_input("Ask your question", disabled=st.session_state.submit_query_is_disabled)
 
-    st.markdown('**1c. Select Date of Logs to Read From**')
+    st.markdown('**3 Select Date of Logs to Read From**')
     list_of_dates = []
     date_format = '%Y%m%d'
     now = datetime.datetime.now()
@@ -101,14 +103,26 @@ with st.sidebar:
                 st.session_state.most_recent = d
 
     end_time = st.slider(
-        "When do you start?",
+        "What is the duration?",
         min_value=st.session_state.least_recent,
         max_value=st.session_state.most_recent,
         # value=datetime(2020, 1, 1),
         format="YYYY/MM/DD")
 
+    st.markdown('**4. Do you want to clear previous historical documents?**')
+    if st.button("Clear Document Cache", type="secondary", 
+                 disabled=st.session_state.submit_query_is_disabled):
+        redis = Redis(
+            url=UPSTASH_REDIS_URL, 
+            token=UPSTASH_REDIS_TOKEN
+            )
+        redis.set(REDIS_KEY, "")
+        
+
     final_doc_list_by_date = []
-    if st.button("Submit", type="primary", disabled=st.session_state.has_facts_to_show):
+    st.markdown('**5. If no, submit query now!**')
+    if st.button("Submit Query", type="primary", 
+                 disabled=st.session_state.submit_query_is_disabled):
         if st.session_state["tabs"] != []:
             st.session_state["tabs"] = []
         can_continue = True
@@ -161,20 +175,24 @@ with st.sidebar:
                 st.write("Just got our Answers!", y.status_code)
                 st.write(y.text)
                 st.session_state.answers_to_question = json.loads(y.text)
+                st.session_state.submit_query_is_disabled = True
+                st.experimental_rerun()
 
 # QUESTION CONTAINER
 container = st.container(border=True)
-container.write("Questions Asked:")
+container.write("☃ Question Asked ☃")
 container.write(input_question)
 
+st.divider()
 if not st.session_state.has_facts_to_show:
-    st.write("Facts will be shown below on submit:")
+    st.write("⌛ Facts will be shown below on submit ⌛")
+    container5 = st.container(border=False)
+    container5.write("")
+    container5.caption("...Awaiting Submission of Query...")
+    container5.write("")
 else:
-    st.write("Facts are shown below, please choose which are correct:")
+    st.write("✌ Facts are shown below, please choose which are to be retained ✌")
 
-
-def disable(index):
-    st.session_state.clicked[index] = True
 
 # get old data from redis before adding in the new ones
 redis = Redis(
@@ -189,10 +207,9 @@ if "store_submitted_for_tab" not in st.session_state:
     st.session_state.store_submitted_for_tab = []
 
 # Allow users to add to source of truth
-st.write(st.session_state.has_facts_to_show)
 if st.session_state.has_facts_to_show == True:
     tabs = st.tabs(st.session_state["tabs"])
-    st.session_state.store_submitted_for_tab = [{'chosen':[], 'rejected':''} 
+    st.session_state.store_submitted_for_tab = [{'chosen':[], 'rejected':[]} 
                                                 for i in range(len(tabs))]
     
     # get relevant facts using date_keys
@@ -203,37 +220,72 @@ if st.session_state.has_facts_to_show == True:
         ans2 = answers[1]
         ans3 = answers[2]
 
-        with tabs[i]:
-                st.write('Select correct answers:')
-                option_1 = st.checkbox(label=f'{ans1}', 
-                                    key=f'opt1_{i}')
-                
-                option_2 = st.checkbox(label=f'{ans2}', 
-                                    key=f'opt2_{i}')
-                
-                option_3 = st.checkbox(label=f'{ans3}', 
-                                    key=f'opt3_{i}')
+        if ans1 == ans2:
+            ans2 = "Duplicate: "+ ans2
+        if ans1 == ans3:
+            ans3 = "Duplicate: "+ ans3
+        if ans2 == ans3:
+            ans3 = "Duplicate: "+ ans3
 
-                if option_1:
-                    if ans1 not in st.session_state.store_submitted_for_tab[i]['chosen']:
-                        st.session_state.store_submitted_for_tab[i]['chosen'].append(ans1)
-                else:
-                    if ans1 in st.session_state.store_submitted_for_tab[i]['chosen']:
-                        st.session_state.store_submitted_for_tab[i]['chosen'].remove(ans1)
-                    
-                if option_2:
-                    if ans2 not in st.session_state.store_submitted_for_tab[i]['chosen']:
-                        st.session_state.store_submitted_for_tab[i]['chosen'].append(ans2)
-                else:
-                    if ans2 in st.session_state.store_submitted_for_tab[i]['chosen']:
-                        st.session_state.store_submitted_for_tab[i]['chosen'].remove(ans2)
+        if ans1 not in st.session_state.store_submitted_for_tab[i]['rejected']:
+            st.session_state.store_submitted_for_tab[i]['rejected'].append(ans1)
+        if ans2 not in st.session_state.store_submitted_for_tab[i]['rejected']:
+            st.session_state.store_submitted_for_tab[i]['rejected'].append(ans2)
+        if ans3 not in st.session_state.store_submitted_for_tab[i]['rejected']:
+            st.session_state.store_submitted_for_tab[i]['rejected'].append(ans3)
+
+
+        with tabs[i]:
+
+
+            st.write('Select correct answers:')
+            option_1 = st.checkbox(label=f'{ans1}', 
+                                key=f'opt1_{i}')
+            
+            option_2 = st.checkbox(label=f'{ans2}', 
+                                key=f'opt2_{i}')
+            
+            option_3 = st.checkbox(label=f'{ans3}', 
+                                key=f'opt3_{i}')
+
+            if option_1:
+                if ans1 not in st.session_state.store_submitted_for_tab[i]['chosen']:
+                    st.session_state.store_submitted_for_tab[i]['chosen'].append(ans1)
                 
-                if option_3:
-                    if ans3 not in st.session_state.store_submitted_for_tab[i]['chosen']:
-                        st.session_state.store_submitted_for_tab[i]['chosen'].append(ans3)
-                else:
-                    if ans3 in st.session_state.store_submitted_for_tab[i]['chosen']:
-                        st.session_state.store_submitted_for_tab[i]['chosen'].remove(ans3)
+                if ans1 in st.session_state.store_submitted_for_tab[i]['rejected']:
+                    st.session_state.store_submitted_for_tab[i]['rejected'].remove(ans1)
+            else:
+                if ans1 in st.session_state.store_submitted_for_tab[i]['chosen']:
+                    st.session_state.store_submitted_for_tab[i]['chosen'].remove(ans1)
+                
+                if ans1 not in st.session_state.store_submitted_for_tab[i]['rejected']:
+                    st.session_state.store_submitted_for_tab[i]['rejected'].append(ans1)
+                
+            if option_2:
+                if ans2 not in st.session_state.store_submitted_for_tab[i]['chosen']:
+                    st.session_state.store_submitted_for_tab[i]['chosen'].append(ans2)
+                
+                if ans2 in st.session_state.store_submitted_for_tab[i]['rejected']:
+                    st.session_state.store_submitted_for_tab[i]['rejected'].remove(ans2)
+            else:
+                if ans2 in st.session_state.store_submitted_for_tab[i]['chosen']:
+                    st.session_state.store_submitted_for_tab[i]['chosen'].remove(ans2)
+
+                if ans2 not in st.session_state.store_submitted_for_tab[i]['rejected']:
+                    st.session_state.store_submitted_for_tab[i]['rejected'].append(ans2)
+            
+            if option_3:
+                if ans3 not in st.session_state.store_submitted_for_tab[i]['chosen']:
+                    st.session_state.store_submitted_for_tab[i]['chosen'].append(ans3)
+
+                if ans3 in st.session_state.store_submitted_for_tab[i]['rejected']:
+                    st.session_state.store_submitted_for_tab[i]['rejected'].remove(ans3)
+            else:
+                if ans3 in st.session_state.store_submitted_for_tab[i]['chosen']:
+                    st.session_state.store_submitted_for_tab[i]['chosen'].remove(ans3)
+
+                if ans3 not in st.session_state.store_submitted_for_tab[i]['rejected']:
+                    st.session_state.store_submitted_for_tab[i]['rejected'].append(ans3)
 
 if st.session_state.has_facts_to_show:
     submit_tab_options = st.button("Submit Checked Facts", 
@@ -245,7 +297,9 @@ if st.session_state.has_facts_to_show:
         st.session_state.submit_facts_is_disabled = True
         for choices in st.session_state.store_submitted_for_tab:
             for j in choices['chosen']:
-                old_data = old_data + '\n' + j 
+                old_data = old_data + '\n' + j
+        
+        # answers = st.session_state.answers_to_question['factsByDay'][st.session_state.date_keys[i]]
         
         data = redis.set(REDIS_KEY, old_data)
         
@@ -262,12 +316,12 @@ if st.session_state.submit_facts_is_disabled:
         container2 = st.container(border=True)
         container2.write("Chosen Facts:")
         for theChosenOne in st.session_state.store_submitted_for_tab[d]['chosen']:
-            container2.write(theChosenOne)
+            container2.write(f'✔✔✔ {theChosenOne}')
 
         container3 = st.container(border=True)
         container3.write("Rejected Facts:")
         for theRejectedOne in st.session_state.store_submitted_for_tab[d]['rejected']:
-            container2.write(theRejectedOne)                
+            container3.write(f'✘✘✘ {theRejectedOne}')                
 
     reset_all_button = st.button(label="Reset to Submit New Data", 
                                     type="primary", 
@@ -280,12 +334,14 @@ if st.session_state.submit_facts_is_disabled:
         st.session_state.has_facts_to_show = False
         st.session_state["tabs"].clear()
         st.session_state.submit_facts_is_disabled = False
+        st.session_state.submit_query_is_disabled = False
         st.experimental_rerun()
 
+st.divider()
+st.title('🍾 Raw Data Structures 🍾')
 st.write('answers_to_question', st.session_state.answers_to_question)
 st.write('store_submitted_for_tab', st.session_state.store_submitted_for_tab)
 st.write('date_keys', st.session_state.date_keys)
 st.write('tabs', st.session_state["tabs"])
-st.write('answers_to_question', st.session_state.answers_to_question)
 st.write('has_facts_to_show', st.session_state.has_facts_to_show)
 st.write('submit_facts_is_disabled', st.session_state.submit_facts_is_disabled)
