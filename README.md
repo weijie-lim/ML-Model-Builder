@@ -26,6 +26,17 @@ https://sayhellotologs-favqdgrpo9c.streamlit.app/
 ## System Architecture
 ![alt text](image.png)
 
+## Streamlit App Screenshots
+![alt text](<Screenshot 2024-03-31 at 4.10.48 AM.png>) 
+![alt text](<Screenshot 2024-03-31 at 4.12.42 AM.png>) 
+![alt text](<Screenshot 2024-03-31 at 4.12.53 AM.png>) 
+![alt text](<Screenshot 2024-03-31 at 4.13.21 AM.png>) 
+![alt text](<Screenshot 2024-03-31 at 4.21.17 AM.png>) 
+![alt text](<Screenshot 2024-03-31 at 4.21.32 AM.png>) 
+![alt text](<Screenshot 2024-03-31 at 4.21.49 AM.png>) 
+![alt text](<Screenshot 2024-03-31 at 4.22.01 AM.png>) 
+![alt text](<Screenshot 2024-03-31 at 4.22.11 AM.png>)
+
 
 ## Further Reading
 - To see the full BE implementation: https://github.com/weijie-lim/BE-FOR-ML-MODEL-BUILDER 
