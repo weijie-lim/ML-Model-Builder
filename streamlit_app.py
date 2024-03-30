@@ -73,6 +73,9 @@ with st.sidebar:
             if not is_valid_datestring(date_str):
                 st.write(f"Check date format in Url, follow YYYYMMDD format")
     
+    st.caption('*For URL(s), please submit with .txt format at the end. No parsing of HTML will work in this app example.')
+    st.caption('**HTML document query or parsing can be done in the future for further app improvement')
+    
     st.markdown('**2. Input Your Question**') 
     input_question = st.text_input("Ask your question", disabled=st.session_state.submit_query_is_disabled)
 
