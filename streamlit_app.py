@@ -6,41 +6,31 @@ import streamlit as st
 import time
 import re
 import requests
-import zipfile
 
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error, r2_score
+from constants import Constants
+from upstash_redis import Redis
 
 
-POST_URL_SUBMIT_DOC_QNS = "https://clericailimweijie-ppt5727pmq-uw.a.run.app/get_question_and_facts"
+POST_URL_SUBMIT_DOC_QNS = Constants.POST_URL_SUBMIT_DOC_QNS
+GET_ANSWERS = Constants.GET_ANSWERS
+UPSTASH_REDIS_URL = Constants.UPSTASH_REDIS_URL
+UPSTASH_REDIS_TOKEN=Constants.UPSTASH_REDIS_TOKEN
+UPSTASH_REDIS_PASSWORD=Constants.UPSTASH_REDIS_PASSWORD
+REDIS_KEY=Constants.REDIS_KEY
 
 
-# Page title
+# PAGE TITLE
 st.set_page_config(page_title='Search Old Logs', page_icon='🤖')
-st.title('🤖 ML Model Building')
+st.title('🤖 Your Trusty AMA Bot 🤖')
+input_question = ""
 
-with st.expander('About this app'):
-  st.markdown('**What can this app do?**')
-  st.info('This app allow users to build a machine learning (ML) model in an end-to-end workflow. Particularly, this encompasses data upload, data pre-processing, ML model building and post-model analysis.')
+if "tabs" not in st.session_state:
+    st.session_state["tabs"] = []
 
-  st.markdown('**How to use the app?**')
-  st.warning('To engage with the app, go to the sidebar and 1. Select a data set and 2. Adjust the model parameters by adjusting the various slider widgets. As a result, this would initiate the ML model building process, display the model results as well as allowing users to download the generated models and accompanying data.')
-
-  st.markdown('**Under the hood**')
-  st.markdown('Data sets:')
-  st.code('''- Drug solubility data set
-  ''', language='markdown')
-  
-  st.markdown('Libraries used:')
-  st.code('''- Pandas for data wrangling
-- Scikit-learn for building a machine learning model
-- Altair for chart creation
-- Streamlit for user interface
-  ''', language='markdown')
+has_facts_to_show = False
 
 
-# Sidebar for accepting input parameters
+# SIDEBAR FOR ACCEPTING INPUTS
 with st.sidebar:
 
     def is_valid_url(url):
@@ -129,6 +119,7 @@ with st.sidebar:
                         date_obj = datetime.datetime.strptime(date_str, date_format)
                         if date_obj.date() <= end_time.date():
                             final_doc_list_by_date.append(url)
+                            st.session_state["tabs"].append(date_str)
 
 
         # update dataframe state
@@ -144,211 +135,70 @@ with st.sidebar:
             x = requests.post(POST_URL_SUBMIT_DOC_QNS, json = to_upload)
             if x.status_code != 200:
                 st.write("status code:",x.status_code)
+            else:
+                st.write("status code:",x.status_code)
 
-      
-    # # Download example data
-    # @st.cache_data
-    # def convert_df(input_df):
-    #     return input_df.to_csv(index=False).encode('utf-8')
-    # example_csv = pd.read_csv('https://raw.githubusercontent.com/dataprofessor/data/master/delaney_solubility_with_descriptors.csv')
-    # csv = convert_df(example_csv)
-    # st.download_button(
-    #     label="Download example CSV",
-    #     data=csv,
-    #     file_name='delaney_solubility_with_descriptors.csv',
-    #     mime='text/csv',
-    # )
+# QUESTION CONTAINER
+container = st.container(border=True)
+container.write("Questions Asked:")
+container.write(input_question)
 
-    # # Select example data
-    # st.markdown('**1.2. Use example data**')
-    # example_data = st.toggle('Load example data')
-    # if example_data:
-    #     df = pd.read_csv('https://raw.githubusercontent.com/dataprofessor/data/master/delaney_solubility_with_descriptors.csv')
+st.write("Facts will be shown below on submit:")
 
-    # st.header('2. Set Parameters')
-    # parameter_split_size = st.slider('Data split ratio (% for Training Set)', 10, 90, 80, 5)
+# x = requests.get('https://w3schools.com')
+# print(x.status_code)
 
+submit_tab_options = st.button("Reset", type="secondary", disabled=False)
 
-    # st.subheader('2.1. Learning Parameters')
-    # with st.expander('See parameters'):
-    #     parameter_n_estimators = st.slider('Number of estimators (n_estimators)', 0, 1000, 100, 100)
-    #     parameter_max_features = st.select_slider('Max features (max_features)', options=['all', 'sqrt', 'log2'])
-    #     parameter_min_samples_split = st.slider('Minimum number of samples required to split an internal node (min_samples_split)', 2, 10, 2, 1)
-    #     parameter_min_samples_leaf = st.slider('Minimum number of samples required to be at a leaf node (min_samples_leaf)', 1, 10, 2, 1)
+def disable(index):
+    st.session_state.clicked[index] = True
 
-    # st.subheader('2.2. General Parameters')
-    # with st.expander('See parameters', expanded=False):
-    #     parameter_random_state = st.slider('Seed number (random_state)', 0, 1000, 42, 1)
-    #     parameter_criterion = st.select_slider('Performance measure (criterion)', options=['squared_error', 'absolute_error', 'friedman_mse'])
-    #     parameter_bootstrap = st.select_slider('Bootstrap samples when building trees (bootstrap)', options=[True, False])
-    #     parameter_oob_score = st.select_slider('Whether to use out-of-bag samples to estimate the R^2 on unseen data (oob_score)', options=[False, True])
+# get old data from redis before adding in the new ones
+redis = Redis(
+    url=UPSTASH_REDIS_URL, 
+    token=UPSTASH_REDIS_TOKEN
+    )
+old_data = redis.get(REDIS_KEY)
+if old_data is None:
+    old_data = ''
 
-    # sleep_time = st.slider('Sleep time', 0, 3, 0)
-
-# Initiate the model building process
-if uploaded_file or example_data: 
-    with st.status("Running ...", expanded=True) as status:
+# Allow users to add to source of truth
+if has_facts_to_show == True:
+    tabs = st.tabs(st.session_state["tabs"])
+    if 'clicked' not in st.session_state:
+        st.session_state.clicked = [False for i in range(len(tabs))]
+    else:
+        st.session_state.clicked = [False for i in range(len(tabs))]
+    for i in range(len(tabs)):
+        with tabs[i]:
+            tabs[i].write("this is tab 1")
+            st.write('Select three known variables:')
+            option_1 = st.checkbox('initial velocity (u)', 
+                                   disabled=st.session_state.clicked[i])
+            option_2 = st.checkbox('final velocity (v)', 
+                                   disabled=st.session_state.clicked[i])
+            option_3 = st.checkbox('acceleration (a)', 
+                                   disabled=st.session_state.clicked[i])
+            submit_tab_options = st.button("Reset", 
+                                           type="secondary", 
+                                           on_click=disable, 
+                                           disabled=st.session_state.clicked[i])
+            if submit_tab_options:
+                if option_1: #is selected, submit to 
+                    #new string
+                    #new_data_str = old_data + "\n" + new_data_str
+                    #data = redis.set(REDIS_KEY, new_data_str)
+                    pass
+                if option_2: #is selected
+                    #new string
+                    #new_data_str = old_data + "\n" + new_data_str
+                    #data = redis.set(REDIS_KEY, new_data_str)
+                    pass
+                if option_3: #is selected
+                    #new string
+                    #new_data_str = old_data + "\n" + new_data_str
+                    #data = redis.set(REDIS_KEY, new_data_str)
+                    pass
     
-        st.write("Loading data ...")
-        time.sleep(sleep_time)
-
-        st.write("Preparing data ...")
-        time.sleep(sleep_time)
-        X = df.iloc[:,:-1]
-        y = df.iloc[:,-1]
-            
-        st.write("Splitting data ...")
-        time.sleep(sleep_time)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=(100-parameter_split_size)/100, random_state=parameter_random_state)
-    
-        st.write("Model training ...")
-        time.sleep(sleep_time)
-
-        if parameter_max_features == 'all':
-            parameter_max_features = None
-            parameter_max_features_metric = X.shape[1]
-        
-        rf = RandomForestRegressor(
-                n_estimators=parameter_n_estimators,
-                max_features=parameter_max_features,
-                min_samples_split=parameter_min_samples_split,
-                min_samples_leaf=parameter_min_samples_leaf,
-                random_state=parameter_random_state,
-                criterion=parameter_criterion,
-                bootstrap=parameter_bootstrap,
-                oob_score=parameter_oob_score)
-        rf.fit(X_train, y_train)
-        
-        st.write("Applying model to make predictions ...")
-        time.sleep(sleep_time)
-        y_train_pred = rf.predict(X_train)
-        y_test_pred = rf.predict(X_test)
-            
-        st.write("Evaluating performance metrics ...")
-        time.sleep(sleep_time)
-        train_mse = mean_squared_error(y_train, y_train_pred)
-        train_r2 = r2_score(y_train, y_train_pred)
-        test_mse = mean_squared_error(y_test, y_test_pred)
-        test_r2 = r2_score(y_test, y_test_pred)
-        
-        st.write("Displaying performance metrics ...")
-        time.sleep(sleep_time)
-        parameter_criterion_string = ' '.join([x.capitalize() for x in parameter_criterion.split('_')])
-        #if 'Mse' in parameter_criterion_string:
-        #    parameter_criterion_string = parameter_criterion_string.replace('Mse', 'MSE')
-        rf_results = pd.DataFrame(['Random forest', train_mse, train_r2, test_mse, test_r2]).transpose()
-        rf_results.columns = ['Method', f'Training {parameter_criterion_string}', 'Training R2', f'Test {parameter_criterion_string}', 'Test R2']
-        # Convert objects to numerics
-        for col in rf_results.columns:
-            rf_results[col] = pd.to_numeric(rf_results[col], errors='ignore')
-        # Round to 3 digits
-        rf_results = rf_results.round(3)
-        
-    status.update(label="Status", state="complete", expanded=False)
-
-    # Display data info
-    st.header('Input data', divider='rainbow')
-    col = st.columns(4)
-    col[0].metric(label="No. of samples", value=X.shape[0], delta="")
-    col[1].metric(label="No. of X variables", value=X.shape[1], delta="")
-    col[2].metric(label="No. of Training samples", value=X_train.shape[0], delta="")
-    col[3].metric(label="No. of Test samples", value=X_test.shape[0], delta="")
-    
-    with st.expander('Initial dataset', expanded=True):
-        st.dataframe(df, height=210, use_container_width=True)
-    with st.expander('Train split', expanded=False):
-        train_col = st.columns((3,1))
-        with train_col[0]:
-            st.markdown('**X**')
-            st.dataframe(X_train, height=210, hide_index=True, use_container_width=True)
-        with train_col[1]:
-            st.markdown('**y**')
-            st.dataframe(y_train, height=210, hide_index=True, use_container_width=True)
-    with st.expander('Test split', expanded=False):
-        test_col = st.columns((3,1))
-        with test_col[0]:
-            st.markdown('**X**')
-            st.dataframe(X_test, height=210, hide_index=True, use_container_width=True)
-        with test_col[1]:
-            st.markdown('**y**')
-            st.dataframe(y_test, height=210, hide_index=True, use_container_width=True)
-
-    # Zip dataset files
-    df.to_csv('dataset.csv', index=False)
-    X_train.to_csv('X_train.csv', index=False)
-    y_train.to_csv('y_train.csv', index=False)
-    X_test.to_csv('X_test.csv', index=False)
-    y_test.to_csv('y_test.csv', index=False)
-    
-    list_files = ['dataset.csv', 'X_train.csv', 'y_train.csv', 'X_test.csv', 'y_test.csv']
-    with zipfile.ZipFile('dataset.zip', 'w') as zipF:
-        for file in list_files:
-            zipF.write(file, compress_type=zipfile.ZIP_DEFLATED)
-
-    with open('dataset.zip', 'rb') as datazip:
-        btn = st.download_button(
-                label='Download ZIP',
-                data=datazip,
-                file_name="dataset.zip",
-                mime="application/octet-stream"
-                )
-    
-    # Display model parameters
-    st.header('Model parameters', divider='rainbow')
-    parameters_col = st.columns(3)
-    parameters_col[0].metric(label="Data split ratio (% for Training Set)", value=parameter_split_size, delta="")
-    parameters_col[1].metric(label="Number of estimators (n_estimators)", value=parameter_n_estimators, delta="")
-    parameters_col[2].metric(label="Max features (max_features)", value=parameter_max_features_metric, delta="")
-    
-    # Display feature importance plot
-    importances = rf.feature_importances_
-    feature_names = list(X.columns)
-    forest_importances = pd.Series(importances, index=feature_names)
-    df_importance = forest_importances.reset_index().rename(columns={'index': 'feature', 0: 'value'})
-    
-    bars = alt.Chart(df_importance).mark_bar(size=40).encode(
-             x='value:Q',
-             y=alt.Y('feature:N', sort='-x')
-           ).properties(height=250)
-
-    performance_col = st.columns((2, 0.2, 3))
-    with performance_col[0]:
-        st.header('Model performance', divider='rainbow')
-        st.dataframe(rf_results.T.reset_index().rename(columns={'index': 'Parameter', 0: 'Value'}))
-    with performance_col[2]:
-        st.header('Feature importance', divider='rainbow')
-        st.altair_chart(bars, theme='streamlit', use_container_width=True)
-
-    # Prediction results
-    st.header('Prediction results', divider='rainbow')
-    s_y_train = pd.Series(y_train, name='actual').reset_index(drop=True)
-    s_y_train_pred = pd.Series(y_train_pred, name='predicted').reset_index(drop=True)
-    df_train = pd.DataFrame(data=[s_y_train, s_y_train_pred], index=None).T
-    df_train['class'] = 'train'
-        
-    s_y_test = pd.Series(y_test, name='actual').reset_index(drop=True)
-    s_y_test_pred = pd.Series(y_test_pred, name='predicted').reset_index(drop=True)
-    df_test = pd.DataFrame(data=[s_y_test, s_y_test_pred], index=None).T
-    df_test['class'] = 'test'
-    
-    df_prediction = pd.concat([df_train, df_test], axis=0)
-    
-    prediction_col = st.columns((2, 0.2, 3))
-    
-    # Display dataframe
-    with prediction_col[0]:
-        st.dataframe(df_prediction, height=320, use_container_width=True)
-
-    # Display scatter plot of actual vs predicted values
-    with prediction_col[2]:
-        scatter = alt.Chart(df_prediction).mark_circle(size=60).encode(
-                        x='actual',
-                        y='predicted',
-                        color='class'
-                  )
-        st.altair_chart(scatter, theme='streamlit', use_container_width=True)
 
     
-# Ask for CSV upload if none is detected
-else:
-    st.warning('👈 Upload a CSV file or click *"Load example data"* to get started!')
