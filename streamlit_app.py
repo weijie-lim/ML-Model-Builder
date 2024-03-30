@@ -8,7 +8,7 @@ import time
 import re
 import requests
 
-from constants import Constants
+from modules.constants import Constants
 from upstash_redis import Redis
 
 

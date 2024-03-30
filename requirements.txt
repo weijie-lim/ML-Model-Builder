@@ -4,3 +4,4 @@ scikit-learn
 altair>=4.0
 langchain>=0.1.13
 upstash-vector>=0.2.1
+upstash-redis==1.0.0
